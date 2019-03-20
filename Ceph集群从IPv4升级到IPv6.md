@@ -80,7 +80,25 @@ ceph-deploy --overwrite-conf push zy-ceph1 zy-ceph2 zy-ceph3
 systemctl start ceph-mon@zy-ceph1
 ```
 
- ***在其他两个节点（zy-ceph2, zy-ceph3）上执行如上操作***
+***在其他两个节点（zy-ceph2, zy-ceph3）上执行如上操作***  
+  
+## IPv6的地址设置  
+### 通过命令设置  
+
+```
+ip -6 addr add 2001:0db8:0:f101::1/64 dev eth0
+```
+
+### 通过配置文件设置  
+配置文件 /etc/sysconfig/network-scriptes/ifcfg-eth0  
+![](images/ifcfg_eth0.jpg)  
+
+### 检查ip地址是否正常工作  
+
+```
+ping6 2001:0db8:0:f101::1
+```
+
  
  
 
