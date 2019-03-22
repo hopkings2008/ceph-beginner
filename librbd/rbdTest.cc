@@ -57,6 +57,10 @@ int main(int argc, char *argv[]){
 		printf("succeed to write the data: %s\n", testData);
 	}while(0);
 
+	if (writeCompletion){
+		rbd_aio_release(writeCompletion);
+	}
+
 	if (img){
 		rbd_close(img);
 	}
