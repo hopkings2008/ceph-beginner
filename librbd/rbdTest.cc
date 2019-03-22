@@ -6,7 +6,9 @@
 int main(int argc, char *argv[]){
 	int ret = 0;
 	printf("this is the librbd test\n");
-	rados_t cluster;
+	rados_t cluster = NULL;
+	rados_ioctx_t ioCtx = NULL;
+	int obj_order = 0;
 	ret = rados_create(&cluster, "qemu");
 	if (ret < 0){
 		printf("failed to rados_create, err: %d\n", ret);
@@ -30,7 +32,24 @@ int main(int argc, char *argv[]){
 			break;
 		}
 		printf("succeed to connect to ceph cluster\n");
+		
+		ret = rados_ioctx_create(cluster, "librbdpool", &ioCtx);
+		if (ret < 0){
+			printf("failed to rados_ioctx_create, ret: %d\n", ret);
+			break;
+		}
+		printf("succeed to rados_ioctx_create\n");
+		ret = rbd_create(ioCtx, "test_img", 2*1024*1024*1024, &obj_order);
+		if (ret < 0){
+			printf("failed to rbd_create, ret: %d\n", ret);
+			break;
+		}
+		printf("succeed to rbd_create\n");
 	}while(0);
+
+	if (ioCtx){
+		rados_ioctx_destroy(ioCtx);
+	}
 
 	rados_shutdown(cluster);
 	return ret;
