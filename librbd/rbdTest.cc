@@ -33,13 +33,13 @@ int main(int argc, char *argv[]){
 		}
 		printf("succeed to connect to ceph cluster\n");
 		
-		ret = rados_ioctx_create(cluster, "librbdpool", &ioCtx);
+		ret = rados_ioctx_create(cluster, "rbd_pool", &ioCtx);
 		if (ret < 0){
 			printf("failed to rados_ioctx_create, ret: %d\n", ret);
 			break;
 		}
 		printf("succeed to rados_ioctx_create\n");
-		ret = rbd_create(ioCtx, "test_img", 2147483648, &obj_order);
+		ret = rbd_create(ioCtx, "lib_img", 2147483648, &obj_order);
 		if (ret < 0){
 			printf("failed to rbd_create, ret: %d\n", ret);
 			break;
