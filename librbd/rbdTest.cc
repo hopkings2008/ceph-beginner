@@ -3,13 +3,15 @@
 #include <rbd/librbd.h>
 
 
+void simple_write_cb(rbd_completion_t cb, void *arg);
+
 int main(int argc, char *argv[]){
 	int ret = 0;
 	printf("this is the librbd test\n");
 	rados_t cluster = NULL;
 	rados_ioctx_t ioCtx = NULL;
-	rbd_image_t img = nullptr;
-	rbd_completion_t writeCompletion = nullptr;
+	rbd_image_t img = NULL;
+	rbd_completion_t writeCompletion = NULL;
 	int obj_order = 0;
 	ret = rados_create(&cluster, "qemu");
 	if (ret < 0){
