@@ -39,7 +39,7 @@ int main(int argc, char *argv[]){
 			break;
 		}
 		printf("succeed to rados_ioctx_create\n");
-		ret = rbd_create(ioCtx, "test_img", 2*1024*1024*1024, &obj_order);
+		ret = rbd_create(ioCtx, "test_img", 2147483648, &obj_order);
 		if (ret < 0){
 			printf("failed to rbd_create, ret: %d\n", ret);
 			break;
