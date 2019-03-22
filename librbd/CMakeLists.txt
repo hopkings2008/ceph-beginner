@@ -20,4 +20,4 @@ include_directories("${PROJECT_BINARY_DIR}/include")
 # add the executable
 add_executable(rbdTest rbdTest.cc)
 
-target_link_libraries(rbdTest -lpthread)
+target_link_libraries(rbdTest -lrbd -lrados)

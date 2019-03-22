@@ -5,7 +5,6 @@
 
 int main(int argc, char *argv[]){
 	int ret = 0;
-	bool isConnected = false;
 	printf("this is the librbd test\n");
 	rados_t cluster;
 	ret = rados_create(&cluster, "qemu");
@@ -14,6 +13,12 @@ int main(int argc, char *argv[]){
 		return ret;
 	}
 	printf("succeed to rados_create\n");
+
+	ret = rados_conf_read_file(cluster, "/etc/ceph/ceph.conf");
+	if (ret < 0){
+		printf("failed to read conf file, ret: %d\n", ret);
+		return ret;
+	}
 	// enable rbd cache.
 	rados_conf_set(cluster, "rbd_cache", "true");
 
@@ -24,13 +29,9 @@ int main(int argc, char *argv[]){
 			printf("failed to connect to ceph cluster, ret: %d\n", ret);
 			break;
 		}
-		isConnected = true;
 		printf("succeed to connect to ceph cluster\n");
 	}while(0);
 
-	if (isConnected){
-		rados_shutdown(cluster);
-	}
 	rados_shutdown(cluster);
 	return ret;
 }
