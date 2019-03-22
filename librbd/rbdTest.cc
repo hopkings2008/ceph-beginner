@@ -8,6 +8,8 @@ int main(int argc, char *argv[]){
 	printf("this is the librbd test\n");
 	rados_t cluster = NULL;
 	rados_ioctx_t ioCtx = NULL;
+	rbd_image_t img = nullptr;
+	rbd_completion_t writeCompletion = nullptr;
 	int obj_order = 0;
 	ret = rados_create(&cluster, "qemu");
 	if (ret < 0){
@@ -39,13 +41,23 @@ int main(int argc, char *argv[]){
 			break;
 		}
 		printf("succeed to rados_ioctx_create\n");
-		ret = rbd_create(ioCtx, "lib_img", 2147483648, &obj_order);
+		//ret = rbd_create(ioCtx, "lib_img", 2147483648, &obj_order);
+		ret = rbd_open(ioCtx, "lib_img", &img, NULL);
 		if (ret < 0){
-			printf("failed to rbd_create, ret: %d\n", ret);
+			printf("failed to rbd_open, ret: %d\n", ret);
 			break;
 		}
-		printf("succeed to rbd_create\n");
+		printf("succeed to rbd_open\n");
+		rbd_aio_create_completion((void *)&writeCompletion, (rbd_callback_t)simple_write_cb, &writeCompletion);
+		char *testData = "this is the test data";
+		rbd_aio_write(img, 0, strlen(testData), testData, writeCompletion);
+		rbd_aio_flush(img, writeCompletion);
+		printf("succeed to write the data: %s\n", testData);
 	}while(0);
+
+	if (img){
+		rbd_close(img);
+	}
 
 	if (ioCtx){
 		rados_ioctx_destroy(ioCtx);
@@ -53,4 +65,9 @@ int main(int argc, char *argv[]){
 
 	rados_shutdown(cluster);
 	return ret;
+}
+
+void simple_write_cb(rbd_completion_t cb, void *arg){
+	uint64_t *data = (uint64_t *)arg;
+	printf("simple_write_cb called with data: %ld\n", *data);
 }
