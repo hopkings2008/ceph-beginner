@@ -54,6 +54,11 @@ int main(int argc, char *argv[]){
 		char *testData = "this is the test data";
 		rbd_aio_write(img, 0, strlen(testData), testData, writeCompletion);
 		rbd_aio_flush(img, writeCompletion);
+		/*ret = rbd_aio_wait_for_complete(writeCompletion);
+		if (ret < 0){
+			printf("failed to wait for complete, ret: %d\n", ret);
+			break;
+		}*/
 		printf("succeed to write the data: %s\n", testData);
 	}while(0);
 
