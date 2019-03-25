@@ -50,15 +50,16 @@ int main(int argc, char *argv[]){
 			break;
 		}
 		printf("succeed to rbd_open\n");
-		rbd_aio_create_completion((void *)&writeCompletion, (rbd_callback_t)simple_write_cb, &writeCompletion);
+		uint64_t data = 123;
+		rbd_aio_create_completion((void *)&data, (rbd_callback_t)simple_write_cb, &writeCompletion);
 		char *testData = "this is the test data";
 		rbd_aio_write(img, 0, strlen(testData), testData, writeCompletion);
-		rbd_aio_flush(img, writeCompletion);
-		/*ret = rbd_aio_wait_for_complete(writeCompletion);
+		//rbd_aio_flush(img, writeCompletion);
+		ret = rbd_aio_wait_for_complete(writeCompletion);
 		if (ret < 0){
 			printf("failed to wait for complete, ret: %d\n", ret);
 			break;
-		}*/
+		}
 		printf("succeed to write the data: %s\n", testData);
 	}while(0);
 
