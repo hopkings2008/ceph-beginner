@@ -9,13 +9,10 @@ Ceph的块存储（RBD）在跨区域数据中心的同步上一直是个短板�
 Ceph RBD Mirror支持两种使用模式：  
 
 ### 单向模式
-镜像数据只能从primary的集群同步到non-primary的集群里，rbd-mirror的daemon只运行在non-primary的集群里即可。
+镜像数据只能从primary的集群同步到non-primary的集群里，rbd-mirror的daemon只运行在non-primary的集群里即可。一个primary集群可以由多个non-primary集群进行备份
 
 ### 双向模式
 镜像数据可以从primary的集群里同步到non-primary的集群里，也可以反向同步。使用此种模式，primary集群和non-primary集群都需要运行rbd-mirror。
-
-### 备注
-一个primary集群可以由多个non-primary集群进行备份
 
 ## RBD Mirror同步数据源的选择
 
