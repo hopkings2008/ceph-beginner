@@ -42,12 +42,18 @@ Image中的数据会首先写入到journal的pool中，然后给调用者返回a
 
 #### journal replay的处理流程
 non-primary的集群中使用rbd-mirror来监控primary集群中journal的变化，从而sync primary中journal的数据到本地，然后执行replay操作，将journal中记录的image的变更应用到本地。  
-如果primary的pool中之前某个镜像已经存在，后来才enable了journaling这个feature，则non-primary的rbd-mirror会先sync这个image，然后再同步journal进行journal replay。  
+如果primary的pool中之前某个镜像已经存在，后来才enable了journaling这个feature，则non-primary的rbd-mirror会先sync这个image，然后再同步journal进行journal replay。每当primary中journal 的数据被同步完成后，被同步的journal所占用的object会被释放掉。  
 
 ### rbd-mirror daemon
 rbd-mirror这个后台守护程序负责监控primary集群中journal的变化，负责同步journal中的数据。Ceph采用类似观察者模式来监控journal中的数据变化，在实现上有很多“Watcher”对象还有对应的“listener”对象。每当watcher探测到journal的变化，rbd-mirror就会同步journal，然后在本地执行replay，从而把image同步到本地。
 
+## RBD Mirror Delayed Deletion
+如果删除primary上的image的时候，会将备份节点上的image也删除，这样的话，如果误删除了primary上的image，会导致该image永远丢失了。因此需要设置delay delete ，这样可以将意外删除的image在设置时间内进行回收。  
+
 ## RBD Mirror Image恢复机制
 目前RBD Mirror只支持active-passive的方式，不支持active-active的方式。镜像的恢复都是线下执行，而非线上同步执行。
+
+## RBD Mirror 性能优化方式
+### 1. 使用ssd组成的pool专门存放journal中的数据
 
 ## RBD Mirror的部署方式
