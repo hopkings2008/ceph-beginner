@@ -52,7 +52,12 @@ splay_offset = entry_tid % splay_width
 ```
 
 rbd相当于给journal中的所属对象分成了一个个的组，每个组用active_set来标识，splay_width代表每个组里有多少个对象。  
-由于journal中的每个event是以append的方式记录到object里了，当一个组里的所有object都被写满的时候，就会增加active_set的值，从而分配一个新的组。  
+由于journal中的每个event是以append的方式记录到object里了，当一个组里的所有object都被写满的时候，就会增加active_set的值，从而分配一个新的组。 
+从上面的公式可以看出splay_offset一定会小于splay_width，所以如果根据object_num来计算active_set的话，则计算公式如下：
+ 
+```
+active_set = object_num / splay_width 
+```
 
 ***journal总是以append的方式记录每个event，对于rbd中image分散在多个object中的数据，在数据没有超过journal中object size的前提下，都会被记录在同一个object中，这种方式也决定了写journal会比较慢***
 
@@ -84,8 +89,49 @@ rbd-mirror这个后台守护程序负责监控primary集群中journal的变化�
 目前RBD Mirror只支持active-passive的方式，不支持active-active的方式。镜像的恢复都是线下执行，而非线上同步执行。  
 如果主节点挂掉，需要手工把从节点promote成主节点，而且所有的客户端都要换成对新的主节点的访问。当主节点恢复后，需要手工把之前的主节点demote成从节点，才能正常服务。 
 
+## RBD Mirror 性能衰减对比
+由于rbd mirror使用了journal进行主备的数据同步，基于journal的事件记录方式，主集群中数据的写入速度会衰减。根据测试，IOPS和每秒的写入有接近一半的衰减。
+  
+### 测试机器的配置
+
+```
+Model: PowerEdge R720
+CPU: Intel(R) Xeon(R) CPU E5-2620 v2 @ 2.10GHz  
+Memory: 96G
+HDD: 580G, SAS, 数量：2
+SSD: 450G, SSD, 数量：3
+```
+### 测试步骤 
+
+```
+使用上述配置的两台物理机器，其中一台做primary节点，另外一台做non-primary节点。数据都写入到HDD的一块数据盘上。
+1. 使用默认的journal配置，使用fio工具在主节点进行image的写入，使用randwrite的方式，每次写入4k的数据。
+2. 创建单独的ssd组成的pool，并把journal放入这个ssd组成的pool中
+```
+
+### 测试结果及性能对比
+
+#### 未使用mirror的image的写测试
+![](images/ceph-plain.jpg)
+
+#### 启用mirror并使用默认配置的image的写测试
+![](images/mirror-default.jpg)
+
+根据以上两个测试，启用mirror的前提下，image的写效率要比不启用mirror的情况下衰减一半
+
+#### 启用mirror但是journal单独放在ssd组成的pool中
+![](images/mirror-split.jpg)
+
+根据以上测试，在启用mirror的前提下，如果把journal的数据放在单独一个由ssd组成的pool中，则image的写效率可以有显著的提升。
+
 ## RBD Mirror 性能优化方式
 ### 使用ssd组成的pool存放journal中的数据
-rbd默认使用存放data的pool来存放journal。由于journal的写是append的方式，分散在多个object中的数据有可能会被append到同一个object中，所以journal记录event不是同时分散在多个object中并发写的，因而比较慢。如果把存放journal的pool放在ssd组成的单独的pool中，
+rbd默认使用存放data的pool来存放journal。由于journal的写是append的方式，分散在多个object中的数据有可能会被append到同一个object中，所以journal记录event不是同时分散在多个object中并发写的，因而比较慢。如果把存放journal的pool放在ssd组成的单独的pool中，会提高写的速度。primary pool和non-primary pool都需要使用ssd组成的pool来存放journal对象。
 
 ## RBD Mirror的部署方式
+具体部署步骤参见[此文档](https://access.redhat.com/documentation/en-us/red_hat_ceph_storage/3/html/block_device_guide/block_device_mirroring
+)
+
+## 附录
+1. [rbd mirror design draft](https://www.spinics.net/lists/ceph-devel/msg24169.html)  
+2. [ceph rbd mirroring](http://docs.ceph.com/docs/master/rbd/rbd-mirroring/)  
