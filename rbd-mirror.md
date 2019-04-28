@@ -22,7 +22,6 @@ Ceph RBD Mirror支持两种使用模式：
 ### 基于某个Image的同步
 只选择某个Image的同步，此Image必须启用journal  
 
-
 ## 实现机制
 Ceph RBD Mirror利用RBD Image的journal特性，从primary集群中把journal同步到non-primary集群里，然后进行replay，把journal中记录的变更数据存到non-primary的集群里。journal是为了实现crash-consistency的一种机制。有很多实现crash-consistency的方式，比如log，Ceph选择使用journal的方式，是因为其相对log来说比较轻量且更加易于实现。Ceph 增加了rbd-mirror这个守护进程来进行journal的同步。  
 如果某个镜像启用了journal，librbd的每次写操作都会先写到journal后，然后返回给调用者。随后journal中的数据会被刷新到osd的磁盘中。   
@@ -125,8 +124,31 @@ SSD: 450G, SSD, 数量：3
 根据以上测试，在启用mirror的前提下，如果把journal的数据放在单独一个由ssd组成的pool中，则image的写效率可以有显著的提升。
 
 ## RBD Mirror 性能优化方式
+
 ### 使用ssd组成的pool存放journal中的数据
 rbd默认使用存放data的pool来存放journal。由于journal的写是append的方式，分散在多个object中的数据有可能会被append到同一个object中，所以journal记录event不是同时分散在多个object中并发写的，因而比较慢。如果把存放journal的pool放在ssd组成的单独的pool中，会提高写的速度。primary pool和non-primary pool都需要使用ssd组成的pool来存放journal对象。
+
+primary和non-primary集群中都需要使用ssd组成的pool来存放journal对象。***由于环境受限，本文中的测试只在primary集群中使用了ssd组成的pool来存放journal数据***。
+
+### 存放journal的pool使能EC模式
+由于journal中记录的event会在non-primary同步完成后删除，所以journal中记录的每个event都是临时数据。可以启用EC来减少存储journal的object所占用的空间
+
+### 增加journal active set的元素个数，增加存储journal的object size
+journal active set中的元素个数由参数splay_width指定。对象的size由object_size指定。设置的方式有两种：  
+
+* 创建image的时候通过参数指定
+
+```
+--journal-splay-width
+--journal-object-size
+```
+
+* 通过/etc/ceph/ceph.conf配置文件指定
+
+```
+rbd_journal_splay_width
+rbd_journal_order
+```
 
 ## RBD Mirror的部署方式
 具体部署步骤参见[此文档](https://access.redhat.com/documentation/en-us/red_hat_ceph_storage/3/html/block_device_guide/block_device_mirroring
