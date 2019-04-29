@@ -42,6 +42,22 @@ total_num = (#osd * PGsPerOSD)/pool_size and round to ^2
 
 官方文档中pg_num和pgp_num的解释和计算逻辑请参照此[链接](https://ceph.com/pgcalc/)
 
+## pg inconsistent问题解决
+如果ceph集群中某些pg处于active + clean + inconsistent状态，表明此pg中对应的osd有可能已经挂掉了。此时要对pg进行修复。
+
+### 查看哪些pg处于inconsistent状态
+
+```
+ceph health detail
+```
+
+### 修复pg
+
+```
+ceph pg repair {placement-group-ID}
+```
+
+关于修复pg的说明，请参照此[链接](http://docs.ceph.com/docs/master/rados/troubleshooting/troubleshooting-pg/)
 
 ## ceph balancer
 
