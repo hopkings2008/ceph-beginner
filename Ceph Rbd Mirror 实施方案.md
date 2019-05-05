@@ -8,7 +8,8 @@ ceph的rbd mirror目前只支持active-passive的方式，对于目前数据中�
 
 ## 两地三中心的实施方案
 
-![](images/rbd-mirror-arc.png)
+![](images/rbd-mirror-arc.png)  
+
 当主数据中心不可访问时，为了简化客户端的配置，可以在数据中心和客户端之间建立一个反向代理。由于ceph的底层通信使用的tcp的模式，故此反向代理是基于tcp的模式。目前nginx支持tcp的反向代理。 
 
 ### Failover 
