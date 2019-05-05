@@ -11,7 +11,7 @@ ceph的rbd mirror目前只支持active-passive的方式，对于目前数据中�
 * 通过使用mirror进行数据同步
 * 通过使用image的snapshot机制可进行回滚操作，如果上层业务是openstack，则可以使用openstack的snapshot机制进行回滚点的数据备份。openstack的cinder后端如果使用ceph，可以进行全量和增量备份。每个image的snapshot也会被mirror到从集群中，如果主集群不可访问，则可以使用从集群中所mirror的snapshot进行数据恢复  
 
-## 两地三中心的实施方案
+## 两地三中心的技术方案
 
 ![](images/rbd-mirror-arc.png)  
 
@@ -33,7 +33,7 @@ ceph的rbd mirror目前只支持active-passive的方式，对于目前数据中�
 ### mirror模式
 rbd mirror使用one-way的方式，之所以不选择two-way的方式是因为主数据中心有可能网络不通。
 当主数据中心不可访问时，为了简化客户端的配置，可以在数据中心和客户端之间使用反向代理层来访问ceph集群中的monitor节点。由于ceph的底层通信使用的tcp的模式，故此反向代理是基于tcp的模式。目前nginx支持tcp的反向代理。 
-之所以引入反响代理是因为rbd mirror目前只支持active-passive的使用方式，不支持active-active的使用方式，负责mirror的从数据中心只能是只读的，当产生failover的时候，如果没有反向代理，所有的rbd客户端都需要更新本地的ceph配置。如果使用反向代理，则指更改反向代理即可，ceph集群的切换可以做到对客户端透明。
+之所以引入反向代理是因为rbd mirror目前只支持active-passive的使用方式，不支持active-active的使用方式，负责mirror的从数据中心只能是只读的，当产生failover的时候，如果没有反向代理，所有的rbd客户端都需要更新本地的ceph配置。如果使用反向代理，则只需更改反向代理即可，ceph集群的切换可以做到对客户端透明。
 
 #### Failover 
 当主数据中心不可访问时，可以按照以下步骤进行数据中心的访问切换：  
@@ -46,3 +46,12 @@ rbd mirror使用one-way的方式，之所以不选择two-way的方式是因为�
 2. 在新恢复的数据中心里resync所有的image  
 3. promote新恢复的数据中心为主数据中心  
 4. 切换反向代理，将所有后端的monitor的指向改为新恢复的主数据中心中monitor的地址  
+
+### Ceph集群配置
+
+#### 使用ssd组成的pool来存放journal数据
+使用单独的由ssd组成的pool来存放image journal的数据，可以加快image的写操作。由于rbd mirror是通过同步journal到从节点，从而在从节点replay journal中的每个event来达到同步的目的，并且journal中每个event都以append的方式被添加进来，相对于普通的io操作，这种append的方式属于“集中化”操作，因而io会比较慢。若果使用由ssd组成的pool来存放journal中的数据，可以加速journal中event的io操作。  
+
+#### 增大journal中用来存放event的object size
+
+#### 增大journal中用来存放event的object数量
