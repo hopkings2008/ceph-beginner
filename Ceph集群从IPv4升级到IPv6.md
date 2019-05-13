@@ -38,7 +38,7 @@ fd01:fe01:fe01:5007:5254:3c:19b8:3
 2. 打印monmap中的cluter地址  
  
    ```
-   monmap --print backup/monmap
+   monmaptool --print backup/monmap
    ```
    
    可以看出原始的3个IPv4的地址
