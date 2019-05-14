@@ -99,6 +99,51 @@ ip -6 addr add 2001:0db8:0:f101::1/64 dev eth0
 ping6 2001:0db8:0:f101::1
 ```
 
- 
- 
+## 对象存储的Ipv6部署
+对象存储的部署，可以参照[yig](https://github.com/journeymidnight/yig)
 
+### tidb的IPv6部署
+请参考tidb的[Ansible离线部署](https://pingcap.com/docs-cn/)。
+
+* 修改host.ini文件，设置ipv6的地址
+* 修改start.yml文件，将http的url里加上'[]'
+* inventory.ini文件，设置ipv6的地址
+
+### yig的部署
+修改yig的配置文件，将相关地址都换成ipv6的地址，并且用'[]'括起来
+
+### nginx的部署
+安装openresty-1.13.6.2，参考此[链接](https://openresty.org/cn/linux-packages.html#centos)。  
+配置nginx.conf文件((/usr/local/openresty/nginx/conf/nginx.conf)：
+
+```
+upstream yig {
+       server [fd01:fe01:fe01:5007:5254:87:55cd:1]:8080 weight=1;
+       server [fd01:fe01:fe01:5007:5254:1f:d4fd:2]:8080 weight=1;
+   }
+   
+listen [::]:80;
+
+```  
+
+### keepalived的部署
+配置如下：
+
+```
+在global_defs里，启用：vrrp_mcast_group6 ff02::12
+virtual_ipaddress的设置如下：
+
+virtual_ipaddress {
+   fd01:fe01:fe01:5007:5254:1f:d5fe:4/64
+}
+
+```
+
+### 使用s3cmd验证对象存储
+设置步骤如下：
+
+```
+1. 设置本机的/etc/hosts文件，设置ipv6的域名，比如：'fd01:fe01:fe01:5007:5254:1f:d5fe:4 yig6.com'，注意此域名必须在yig的配置文件里同样设置上
+2. 设置本机.s3cfg文件，设置好对应的host及ak／sk.
+3. 使用s3cmd验证所部署的基于ipv6的对象存储
+```

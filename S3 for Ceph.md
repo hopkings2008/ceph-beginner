@@ -37,3 +37,5 @@ host_bucket = %(bucket).zy-s31:7480
 ```
 
 
+## 参考
+[radosgw hosting website](https://ceph.com/planet/hosting-a-web-site-in-radosgw/)
