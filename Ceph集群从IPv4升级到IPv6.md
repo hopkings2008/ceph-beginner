@@ -108,6 +108,10 @@ ping6 2001:0db8:0:f101::1
 * 修改host.ini文件，设置ipv6的地址
 * 修改start.yml文件，将http的url里加上'[]'
 * inventory.ini文件，设置ipv6的地址
+* 修改tidb部署目录下的启动脚本：run_xxx.sh，按要求设置ipv6的地址
+
+备注：
+
 
 ### yig的部署
 修改yig的配置文件，将相关地址都换成ipv6的地址，并且用'[]'括起来
